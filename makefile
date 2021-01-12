@@ -1,11 +1,16 @@
-languages = bash c cpp css go html javascript json lua markdown php python ruby rust
-parsers = $(foreach language, $(languages), grammars/tree-sitter-$(language)/src/parser.c)
+parsers = bash cpp css html javascript lua markdown php python ruby rust
+noscanner = c go json
 
-lib = tree-sitter/lib/src/lib.c
-include = -I tree-sitter/lib/include -I tree-sitter/lib/src
+DIR = $(foreach parser, $(parsers), grammars/tree-sitter-$(parser)/src)
+OBJ = $(foreach dir, $(DIR), $(dir)/parser.o $(dir)/scanner.o)
+OBJ += $(foreach parser, $(noscanner), grammars/tree-sitter-$(parser)/src/parser.o)
+OBJ += tree-sitter/lib/src/lib.o
 
-all:
-	cc $(lib) $(parsers) $(include) -fPIC -shared -o libtree-sitter-parsers.so
+LIB = libtree-sitter-parsers.so
+CPPFLAGS = -fPIC -I tree-sitter/lib/src -I tree-sitter/lib/include
+
+all: $(OBJ)
+	$(CXX) $^ -shared -o $(LIB)
 
 clean:
-	rm -f libtree-sitter-parsers.so
+	rm -f $(OBJ) $(LIB)
